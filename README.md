@@ -14,7 +14,7 @@ There are two ways,
 
 - Clone the repository
 - Open Eclipse
-- File > Import.. > General > Existing Projects into Workspace
+- `File > Import.. > General > Existing Projects into Workspace`
 - Browse the root directory and click `Finish`
 - After it opens, unhide `main > phylonet.coalescent`
 - The file `MGDInference_DP.java` contains the main function
