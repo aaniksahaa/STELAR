@@ -484,6 +484,7 @@ public class MGDInference_DP {
 			//System.out.println("not in score gene tree");
 		}
 		startTime = System.currentTimeMillis();
+		System.out.println("\n\nProceeding to inferring species tree...\n\n");
 		List<Solution> solutions = inference.inferSpeciesTree();
 		long endTime = System.currentTimeMillis();
 
@@ -786,6 +787,7 @@ public class MGDInference_DP {
 			throw new IllegalArgumentException("empty or null list of trees");
 		}
 		if (taxonNameMap != null && taxonNameMap.taxonMap != null) {
+			System.out.println("\n\nI am here at taxonmap part");
 			Map<String,String> taxonMap = taxonNameMap.taxonMap;
 			String error = Trees.checkMapping(trees, taxonMap);
 			if (error != null) {
@@ -812,7 +814,7 @@ public class MGDInference_DP {
 				stTaxa[i] = ((String) ((List) temp2).get(i));
 			}
 		} else if (taxonNameMap != null && taxonNameMap.taxonMap == null) {
-			
+			System.out.println("\n\nI am here at taxonmap else if");
 			Set<String> taxalist = new HashSet<String>();
 			Set<String> genelist = new HashSet<String>();
 			for (Tree tr : trees) {
@@ -838,11 +840,13 @@ public class MGDInference_DP {
 		} else {
 			cd = null;
 			if (rooted & extraTrees == null & taxonNameMap == null && false) {
+				System.out.println("\n\nI am here going to do collapse");
 				cd = doCollapse(trees);
 			}
-
+			
+			// Building list of all taxa
 			List<String> taxalist = new ArrayList<String>();
-			for (Tree tr : trees) {
+			for (Tree tr : trees) { 
 				for (TNode node : tr.postTraverse()) {
 					if ((node.isLeaf()) && (!taxalist.contains(node.getName()))) {
 						taxalist.add(node.getName());

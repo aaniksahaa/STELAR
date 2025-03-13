@@ -3,12 +3,15 @@ package phylonet.coalescent;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
 
@@ -575,6 +578,22 @@ public class DuplicationWeightCounter {
 	}
 
 	class CalculateWeightTask {
+		
+		// Inner class to store matching counts for X and Y taxa
+	    private static class MatchingCounts {
+	        int xCount;
+	        int yCount;
+	        
+	        MatchingCounts(int x, int y) {
+	            this.xCount = x;
+	            this.yCount = y;
+	        }
+	        
+	        void add(MatchingCounts other) {
+	            this.xCount += other.xCount;
+	            this.yCount += other.yCount;
+	        }
+	    }
 
 		/**
 		 * 
@@ -582,44 +601,185 @@ public class DuplicationWeightCounter {
 		private static final long serialVersionUID = -2614161117603289345L;
 		private STBipartition stb;
 		private ClusterCollection containedClusterCollection;
+		private List<Tree> trees;
 
 		public CalculateWeightTask(STBipartition stb,
-				ClusterCollection collection) {
+				ClusterCollection collection, List<Tree>trees) {
 			this.stb = stb;
 			this.containedClusterCollection = collection;
+			this.trees = trees;
 		}
 
 		int calculateMissingWeight() {
-			// System.err.print("Calculating weight for: " + biggerSTB);
+			//System.err.print("Calculating weight for: " + biggerSTB);
 			int weight = 0;
-			// System.err.print("Calculating weight for: " + biggerSTB);                              
+			
 			BitSet X =  stb.cluster1.getBitSet() ;
 			BitSet Y =  stb.cluster2.getBitSet() ;
 			//System.out.println("Calculating missing Weight");
 			//System.out.println(stb.toString());
-			for (STBipartition smallerSTB : clusters.getContainedGeneTreeSTBs()) {
-					int temp = 0;
-					// possible place of implementation.
-				//	System.out.println("Loop "+ smallerSTB.toString() +"count =  "+ geneTreeSTBCount.get(smallerSTB)); 
-					BitSet A = smallerSTB.cluster1.getBitSet();
-					BitSet B = smallerSTB.cluster2.getBitSet();
+			
+//			System.out.println("\nTaxa:\n");
+//			for(String t: stb.cluster1.getTaxa()) {
+//				System.out.println("Taxon " + t + " ");
+//			}
+//			System.out.println("\n");
+			
+			// traversing all gene trees
+//			System.out.println("total trees = " + trees.size());
+			
+			
+			
+			int w1 = 0;
+			int w2 = 0;
+			
+			
+			boolean isNew = false;
+			
+			// O(nk) implementation instead of O(n^2k)
+			if(isNew) {
+				int cntt = 0;
+				String[] Xtaxa = stb.cluster1.getTaxa();
+				String[] Ytaxa = stb.cluster2.getTaxa();
+				
+				Set<String> xTaxaSet = new HashSet<>();
+		        Set<String> yTaxaSet = new HashSet<>();
+		        
+		        for(int i=0; i<Xtaxa.length; i++) {
+		        	if(X.get(i)) {
+		        		xTaxaSet.add(Xtaxa[i]);
+		        	}
+		        }
+		        
+		        for(int i=0; i<Ytaxa.length; i++) {
+		        	if(Y.get(i)) {
+		        		yTaxaSet.add(Ytaxa[i]);
+		        	}
+		        }
+				
+				for (int t = 0; t < trees.size(); t++) {
+					Tree tr = trees.get(t);
+					// for each node, we need to keep two numbers
+					// matching leaves count (in its subtree) with X and Y
+					//Map<TNode, MatchingCounts> nodeCounts = new HashMap<>();
 					
-					BitSet X1 = and(X,A);
-					BitSet Y1 = and(Y,B);
-					temp = apply(X1, Y1);
-
-					BitSet X2 = and(X,B);
-					BitSet Y2 = and(Y,A);
-					temp += apply(X2, Y2);
-								
-					//System.out.println(geneTreeSTBCount.get(smallerSTB));
-					temp *= geneTreeSTBCount.get(smallerSTB);
-					weight += temp;
-					//System.out.println(smallerSTB.toString() + " :: "+ temp);
+					Stack<MatchingCounts> stack = new Stack<>();
+					
+					for (TNode node : tr.postTraverse()) {
+						// System.err.println("Node is:" + node);
+						if (node.isLeaf()) {
+							// from nodeName determine its matching
+							// since this is just one node, the count should be 0 or 1
+							String nodeName = node.getName();
+			                // Check if the leaf matches with X or Y taxa
+			                int xMatch = xTaxaSet.contains(nodeName) ? 1 : 0;
+			                int yMatch = yTaxaSet.contains(nodeName) ? 1 : 0;
+			                MatchingCounts mc = new MatchingCounts(xMatch, yMatch);
+			                
+			                //nodeCounts.put(node, mc);
+			                
+			                stack.push(mc);
+						} else {
+							cntt++;
+							// For internal nodes, accumulate counts from children
+			                MatchingCounts currentCounts = new MatchingCounts(0, 0);
+			                
+//			                MatchingCounts L = null, R = null;
+//			                int i = 0;
+			                
+			                MatchingCounts R = stack.pop();
+		                	MatchingCounts L = stack.pop();
+		                	currentCounts.add(L);
+		                	currentCounts.add(R);
+		                	stack.push(currentCounts);
+		                	
+//			                for (TNode child : node.getChildren()) {
+//			                	
+//			                    MatchingCounts childCounts = nodeCounts.get(child);
+//			                    if(i == 0) {
+//			                    	L = childCounts;
+//			                    } else {
+//			                    	R = childCounts;
+//			                    }
+//			                    if (childCounts != null) {
+//			                        currentCounts.add(childCounts);
+//			                    }
+//			                    i++;
+//			                }
+			                
+			       
+			                //nodeCounts.put(node, currentCounts);
+			                
+			                int temp = 0, res;
+			                
+			                int c1 = L.xCount;
+			        		int c2 = R.yCount;
+	
+			        		res = c1*c2*(c1+c2-2);
+			        		res /=2;
+			        		
+			        		temp += res;
+			        		
+			        		c1 = L.yCount;
+			        		c2 = R.xCount;
+	
+			        		res = c1*c2*(c1+c2-2);
+			        		res /=2;
+			        		
+			        		temp += res;
+				
+							//System.out.println(temp);
+			        		
+			        		weight += temp;
+			        		
+						}
+					}
+				}
+				w1 = weight;
+				//System.out.println("Total "+cntt+" STBs");
 			}
+			else {   
+				weight = 0;
+				
+				int cntt = 0;
+				for (STBipartition smallerSTB : clusters.getContainedGeneTreeSTBs()) {
+					
+						int temp = 0;
+						// possible place of implementation.
+					//	System.out.println("Loop "+ smallerSTB.toString() +"count =  "+ geneTreeSTBCount.get(smallerSTB)); 
+						BitSet A = smallerSTB.cluster1.getBitSet();
+						BitSet B = smallerSTB.cluster2.getBitSet();
+						
+						BitSet X1 = and(X,A);
+						BitSet Y1 = and(Y,B);
+						temp = apply(X1, Y1);
+	
+						BitSet X2 = and(X,B);
+						BitSet Y2 = and(Y,A);
+						temp += apply(X2, Y2);
+									
+						//System.out.println(geneTreeSTBCount.get(smallerSTB));
+						temp *= geneTreeSTBCount.get(smallerSTB);
+						weight += temp;
+						//System.out.println(smallerSTB.toString() + " :: "+ temp);
+						
+						cntt += geneTreeSTBCount.get(smallerSTB);
+				}
+				//System.out.println("Total "+cntt+" STBs");
+				
+				w2 = weight;
+			}
+			
+//			if(w1 != w2) {
+//				System.out.println("\nNot Equal!! w1 = " + w1 + ", w2 = " + w2);
+//			}
 						
 		//	System.out.println("STB score of + " + stb.toString() + " is =  "+weight);
 			// System.err.print(" ... " + weight);
+			
+			
+			
+			// this is the place where changes are meant to be made in case of unrooted STELAR
 			
 			if (!rooted) {
 				throw new RuntimeException("Unrooted not implemented.");
