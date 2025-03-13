@@ -5,6 +5,10 @@ The algorithm used is described in our paper **"STELAR: A statistically consiste
 
 <!-- 
 
+## Understanding the Codebase
+
+- The core logics of STELAR are under the file CalculateWeightTask.java
+
 ## How to Run the Codebase
 
 It must be run on the Eclipse IDE.
