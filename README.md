@@ -3,6 +3,24 @@
 STELAR is a Dynamic Programming (DP) based software for estimating species trees given a set of rooted gene trees, such that triplet consistency (between a species tree and the gene trees) is maximized within a constrained search space. STELAR is fast, highly accurate and statistically consistent. 
 The algorithm used is described in our paper **"STELAR: A statistically consistent coalescent-based species trees estimation method by maximizing triplet consistency."** [(Paper link)](https://bmcgenomics.biomedcentral.com/articles/10.1186/s12864-020-6519-y)
 
+## How to Run the Codebase
+
+It must be run on the Eclipse IDE.
+There are two ways,
+- Clone directly from git on Eclipse
+- Or, first clone the repo locally, then open on eclipse by browsing the local directory
+
+## Steps
+
+- Clone the repository
+- Open Eclipse
+- File > Import.. > General > Existing Projects into Workspace
+- Browse the root directory and click `Finish`
+- After it opens, unhide `main > phylonet.coalescent`
+- The file `MGDInference_DP.java` contains the main function
+- From the toolbar, from `Run Icon > Run Configurations > Arguments` write the argument as `-i in.tre -o out.tre` or put your own filenames as needed
+- Run Icon > click on `MGDInference_DP`
+
 ## Availability
 
 STELAR is freely available at [https://github.com/islamazhar/STELAR](https://islamazhar.github.io/STELAR/#installation). 
@@ -22,10 +40,6 @@ STELAR is a valuable technique for species tree estimation from gene tree distri
 STELAR code uses code from the PhyloNet package by Luay Nakhleh (bioinfo.cs.rice.edu/phylonet). 
 The Phylonet code base was previously used by DynaDup and ASTRAL (with permission from Authors), and 
 STELAR is mostly based on DynaDup code base.
-
-## How to Run
-
-It must be run on the Eclipse IDE. First go to the github cloning option of Eclipse and clone and start working on it.
 
 ## Bug Reports
 We are always looking for ways to improve our codes. For any bugs please email at: [mazhar.buet11@gmail.com](mailto:mazhar.buet11@gmail.com)
