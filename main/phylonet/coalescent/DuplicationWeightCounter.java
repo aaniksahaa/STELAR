@@ -660,11 +660,15 @@ public class DuplicationWeightCounter {
 		        // looping over the gene trees
 				for (int t = 0; t < trees.size(); t++) {
 					Tree tr = trees.get(t);
+					
 					// for each node, we need to keep two numbers
 					// matching leaves count (in its subtree) with X and Y
 					// Map<TNode, MatchingCounts> nodeCounts = new HashMap<>();
 					
 					// this stack actually does the DFS
+					// here what we do is, say we have a node A with children L and R
+	                // and let, for node N, N.x and N.y denote the match counts with X and Y respectively
+	                // MatchingCounts class serves this purpose of a pair of numbers
 					Stack<MatchingCounts> stack = new Stack<>();
 					
 					// we postTraverse, since it corresponds to DFS
@@ -748,7 +752,13 @@ public class DuplicationWeightCounter {
 				//System.out.println("Total "+cntt+" STBs");
 			}
 			else {   
+				
 				// the following is the previous implementation
+				// Note that, this does one clever thing, rather than looping over all trees
+				// it has a pre-determined aggregated list of all the unique STBs in the gene trees
+				// basically it has a list of unique STBs and also a count map
+				// so, it calculates for each of them separately, and multiplies by count of appearance of that STB, then adds to the total
+				// since, practically there are many overlaps of STBs, this improves the performance a lot against the theoretical bound of O(n^2k)
 				
 				weight = 0;
 				
