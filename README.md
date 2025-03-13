@@ -14,12 +14,18 @@ There are two ways,
 
 - Clone the repository
 - Open Eclipse
+  ![Eclipse Front](images/1-eclipse-front.png)
 - `File > Import.. > General > Existing Projects into Workspace`
+  ![Eclipse Import](images/2-eclipse-import.png)
 - Browse the root directory and click `Finish`
+  ![Eclipse Import Path Browsing](images/3-eclipse-import-path-browsing.png)
+  ![Import Finishing](images/4-import-finishing.png)
 - After it opens, unhide `main > phylonet.coalescent`
 - The file `MGDInference_DP.java` contains the main function
 - From the toolbar, from `Run Icon > Run Configurations > Arguments` write the argument as `-i in.tre -o out.tre` or put your own filenames as needed
+  ![Fixing Run Arguments](images/5-fixing-run-arguments.png)
 - Run Icon > click on `MGDInference_DP`
+  ![Running Stelar](images/6-running-stelar.png)
 
 ## Availability
 
