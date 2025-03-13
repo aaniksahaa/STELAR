@@ -23,6 +23,10 @@ STELAR code uses code from the PhyloNet package by Luay Nakhleh (bioinfo.cs.rice
 The Phylonet code base was previously used by DynaDup and ASTRAL (with permission from Authors), and 
 STELAR is mostly based on DynaDup code base.
 
+## How to Run
+
+It must be run on the Eclipse IDE. First go to the github cloning option of Eclipse and clone and start working on it.
+
 ## Bug Reports
 We are always looking for ways to improve our codes. For any bugs please email at: [mazhar.buet11@gmail.com](mailto:mazhar.buet11@gmail.com)
 

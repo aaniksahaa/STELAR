@@ -633,7 +633,7 @@ public class DuplicationWeightCounter {
 			int w1 = 0;
 			int w2 = 0;
 			
-			
+			// isNew variable controls whether the improved or the previous algorithm is being run
 			boolean isNew = false;
 			
 			// O(nk) implementation instead of O(n^2k)
@@ -657,14 +657,17 @@ public class DuplicationWeightCounter {
 		        	}
 		        }
 				
+		        // looping over the gene trees
 				for (int t = 0; t < trees.size(); t++) {
 					Tree tr = trees.get(t);
 					// for each node, we need to keep two numbers
 					// matching leaves count (in its subtree) with X and Y
-					//Map<TNode, MatchingCounts> nodeCounts = new HashMap<>();
+					// Map<TNode, MatchingCounts> nodeCounts = new HashMap<>();
 					
+					// this stack actually does the DFS
 					Stack<MatchingCounts> stack = new Stack<>();
 					
+					// we postTraverse, since it corresponds to DFS
 					for (TNode node : tr.postTraverse()) {
 						// System.err.println("Node is:" + node);
 						if (node.isLeaf()) {
@@ -687,6 +690,10 @@ public class DuplicationWeightCounter {
 //			                MatchingCounts L = null, R = null;
 //			                int i = 0;
 			                
+			                // here what we do is, say we have a node A with children L and R
+			                // and let, for node N, N.x and N.y denote the match counts with X and Y respectively
+			                // thus, we can say, A.x = L.x + R.x and A.y = L.y + R.y
+			                // since we are using a stack, we may just add the counts after popping the children off the stack
 			                MatchingCounts R = stack.pop();
 		                	MatchingCounts L = stack.pop();
 		                	currentCounts.add(L);
@@ -710,6 +717,7 @@ public class DuplicationWeightCounter {
 			       
 			                //nodeCounts.put(node, currentCounts);
 			                
+		                	// here, after we have the X and Y matches, we now add the triplet scores up the node
 			                int temp = 0, res;
 			                
 			                int c1 = L.xCount;
@@ -730,6 +738,7 @@ public class DuplicationWeightCounter {
 				
 							//System.out.println(temp);
 			        		
+			        		// finally we accumate it to the final total weight count means the total triplet score
 			        		weight += temp;
 			        		
 						}
@@ -739,6 +748,8 @@ public class DuplicationWeightCounter {
 				//System.out.println("Total "+cntt+" STBs");
 			}
 			else {   
+				// the following is the previous implementation
+				
 				weight = 0;
 				
 				int cntt = 0;
