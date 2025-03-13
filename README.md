@@ -5,10 +5,6 @@ The algorithm used is described in our paper **"STELAR: A statistically consiste
 
 <!-- 
 
-## Understanding the Codebase
-
-- The core logics of STELAR are under the file CalculateWeightTask.java
-
 ## How to Run the Codebase
 
 It must be run on the Eclipse IDE.
@@ -43,6 +39,11 @@ There are two ways,
   <br><br>
   ![Running Stelar](images/6-running-stelar.png)
   <br><br>
+
+## Understanding the Codebase
+
+- The main function is at `MGDInference_DP.java`
+- The core logics of STELAR are under the file `CalculateWeightTask.java`
 
 -->
 
