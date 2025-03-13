@@ -16,6 +16,7 @@ import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 import java.util.Stack;
+import java.util.concurrent.ConcurrentHashMap;
 
 import phylonet.lca.SchieberVishkinLCA;
 import phylonet.tree.model.TNode;
@@ -604,6 +605,43 @@ public class DuplicationWeightCounter {
 		private STBipartition stb;
 		private ClusterCollection containedClusterCollection;
 		private List<Tree> trees;
+		
+		
+		// Utility class to store BitSet pairs with proper equals & hashCode
+	    private static class BitSetPair {
+	        private final BitSet first;
+	        private final BitSet second;
+	        private final int hash;
+
+	        BitSetPair(BitSet a, BitSet b) {
+	            // Ensure consistent order
+	            if (a.hashCode() <= b.hashCode()) {
+	                this.first = (BitSet) a.clone();
+	                this.second = (BitSet) b.clone();
+	            } else {
+	                this.first = (BitSet) b.clone();
+	                this.second = (BitSet) a.clone();
+	            }
+	            this.hash = first.hashCode() ^ second.hashCode();
+	        }
+
+	        @Override
+	        public boolean equals(Object obj) {
+	            if (this == obj) return true;
+	            if (!(obj instanceof BitSetPair)) return false;
+	            BitSetPair other = (BitSetPair) obj;
+	            return first.equals(other.first) && second.equals(other.second);
+	        }
+
+	        @Override
+	        public int hashCode() {
+	            return hash;
+	        }
+	    }
+		
+		// Cache to store computed values for (X, Y)
+	    private static final Map<BitSetPair, Integer> weightCache = new ConcurrentHashMap<>();
+		
 
 		public CalculateWeightTask(STBipartition stb,
 				ClusterCollection collection, List<Tree>trees) {
@@ -611,8 +649,35 @@ public class DuplicationWeightCounter {
 			this.containedClusterCollection = collection;
 			this.trees = trees;
 		}
-
+		
 		int calculateMissingWeight() {
+			//System.err.print("Calculating weight for: " + biggerSTB);
+//			int weight = 0;
+			
+			BitSet X =  stb.cluster1.getBitSet() ;
+			BitSet Y =  stb.cluster2.getBitSet() ;
+			
+			// Normalize and create a key
+	        BitSetPair key = new BitSetPair(X, Y);
+	        
+	        boolean isWeightCaching = true;
+	        isWeightCaching = false;
+
+	        // Check cache
+	        // this caching is, in turn, increasing runtime, not much helping
+	        
+	        if(isWeightCaching) {
+		        return weightCache.computeIfAbsent(key, k -> {
+		            // Perform computation if not cached
+		            return computeWeight();
+		        });
+	        } else {
+	        	return computeWeight();
+	        }
+	        
+		}
+
+		int computeWeight() {
 			//System.err.print("Calculating weight for: " + biggerSTB);
 			int weight = 0;
 			
@@ -637,7 +702,7 @@ public class DuplicationWeightCounter {
 			
 			// isNew variable controls whether the improved or the previous algorithm is being run
 			boolean isNew = false;
-			isNew = true;
+//			isNew = true;
 			
 			// O(nk) implementation instead of O(n^2k)
 			if(isNew) {
