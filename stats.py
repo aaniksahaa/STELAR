@@ -155,6 +155,8 @@ if __name__ == "__main__":
     # Replace 'trees.txt' with your actual file name.
     filename = "./Data-set/test-dataset/test-100-gt/gene_trees.txt"
     filename = "./Data-set/37-taxon/noscale.100g.500b/R20/R20.genetrees"
+    filename = "./in.tre"
+    filename = "./in2.tre"
     
     bip_counter, subtree_sizes = process_trees(filename)
     

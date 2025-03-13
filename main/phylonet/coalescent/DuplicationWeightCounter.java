@@ -2,8 +2,10 @@ package phylonet.coalescent;
 
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -635,6 +637,7 @@ public class DuplicationWeightCounter {
 			
 			// isNew variable controls whether the improved or the previous algorithm is being run
 			boolean isNew = false;
+			isNew = true;
 			
 			// O(nk) implementation instead of O(n^2k)
 			if(isNew) {
@@ -656,6 +659,9 @@ public class DuplicationWeightCounter {
 		        		yTaxaSet.add(Ytaxa[i]);
 		        	}
 		        }
+		        
+		        
+		        /* prev imp
 				
 		        // looping over the gene trees
 				for (int t = 0; t < trees.size(); t++) {
@@ -677,10 +683,18 @@ public class DuplicationWeightCounter {
 						if (node.isLeaf()) {
 							// from nodeName determine its matching
 							// since this is just one node, the count should be 0 or 1
-							String nodeName = node.getName();
-			                // Check if the leaf matches with X or Y taxa
-			                int xMatch = xTaxaSet.contains(nodeName) ? 1 : 0;
-			                int yMatch = yTaxaSet.contains(nodeName) ? 1 : 0;
+							// String nodeName = node.getName();
+							int nodeID = node.getID();
+							
+							// Check if the leaf matches with X or Y taxa
+							
+							int xMatch = X.get(nodeID) ? 1 : 0;
+			                int yMatch = Y.get(nodeID) ? 1 : 0;
+							
+			                
+//			                int xMatch = xTaxaSet.contains(nodeName) ? 1 : 0;
+//			                int yMatch = yTaxaSet.contains(nodeName) ? 1 : 0;
+			                
 			                MatchingCounts mc = new MatchingCounts(xMatch, yMatch);
 			                
 			                //nodeCounts.put(node, mc);
@@ -750,6 +764,59 @@ public class DuplicationWeightCounter {
 				}
 				w1 = weight;
 				//System.out.println("Total "+cntt+" STBs");
+				 * 
+				 *
+				 */
+		        
+		        // looping over the gene trees
+		        for (int t = 0; t < trees.size(); t++) {
+		            Tree tr = trees.get(t);
+		            // Use an ArrayDeque as a stack for better performance
+		            Deque<int[]> stack = new ArrayDeque<>();
+		            
+		            // Perform post-order traversal
+		            for (TNode node : tr.postTraverse()) {
+		                if (node.isLeaf()) {
+		                    int nodeID = node.getID();
+		                    int xMatch = X.get(nodeID) ? 1 : 0;
+		                    int yMatch = Y.get(nodeID) ? 1 : 0;
+		                    // Create an array to hold the match counts for this leaf node
+		                    int[] counts = new int[2];
+		                    counts[0] = xMatch;  // x count
+		                    counts[1] = yMatch;  // y count
+		                    stack.push(counts);
+		                } else {
+		                    // Pop counts for the two children
+		                    int[] right = stack.pop();
+		                    int[] left = stack.pop();
+		                    
+		                    // Aggregate counts for the current internal node
+		                    int[] current = new int[2];
+		                    current[0] = left[0] + right[0]; // Sum of x counts
+		                    current[1] = left[1] + right[1]; // Sum of y counts
+		                    stack.push(current);
+		                    
+		                    // Calculate the triplet score for the internal node
+		                    int temp = 0;
+		                    // Case 1: left.x * right.y triplets
+		                    int c1 = left[0];
+		                    int c2 = right[1];
+		                    int res = c1 * c2 * (c1 + c2 - 2) / 2;
+		                    temp += res;
+		                    
+		                    // Case 2: left.y * right.x triplets
+		                    c1 = left[1];
+		                    c2 = right[0];
+		                    res = c1 * c2 * (c1 + c2 - 2) / 2;
+		                    temp += res;
+		                    
+		                    // Accumulate the computed triplet score
+		                    weight += temp;
+		                }
+		            }
+		        }
+		        w1 = weight;
+
 			}
 			else {   
 				
