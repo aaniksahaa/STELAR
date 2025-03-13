@@ -14,9 +14,9 @@ There are two ways,
 
 - Clone the repository
 - Open Eclipse
-  <br>
+  <br><br>
   ![Eclipse Front](images/1-eclipse-front.png)
-  <br>
+  <br><br>
 - `File > Import.. > General > Existing Projects into Workspace`
   ![Eclipse Import](images/2-eclipse-import.png)
 - Browse the root directory and click `Finish`
