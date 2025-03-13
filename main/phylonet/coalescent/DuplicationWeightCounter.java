@@ -661,7 +661,7 @@ public class DuplicationWeightCounter {
 		        }
 		        
 		        
-		        /* prev imp
+		        // /* prev imp
 				
 		        // looping over the gene trees
 				for (int t = 0; t < trees.size(); t++) {
@@ -683,17 +683,19 @@ public class DuplicationWeightCounter {
 						if (node.isLeaf()) {
 							// from nodeName determine its matching
 							// since this is just one node, the count should be 0 or 1
-							// String nodeName = node.getName();
-							int nodeID = node.getID();
+							String nodeName = node.getName();
+							
+							
+							// this id is not working, need to understand more
+//							int nodeID = node.getID() - 1;
+//							int xMatch = X.get(nodeID) ? 1 : 0;
+//			                int yMatch = Y.get(nodeID) ? 1 : 0;
+							
 							
 							// Check if the leaf matches with X or Y taxa
-							
-							int xMatch = X.get(nodeID) ? 1 : 0;
-			                int yMatch = Y.get(nodeID) ? 1 : 0;
-							
 			                
-//			                int xMatch = xTaxaSet.contains(nodeName) ? 1 : 0;
-//			                int yMatch = yTaxaSet.contains(nodeName) ? 1 : 0;
+			                int xMatch = xTaxaSet.contains(nodeName) ? 1 : 0;
+			                int yMatch = yTaxaSet.contains(nodeName) ? 1 : 0;
 			                
 			                MatchingCounts mc = new MatchingCounts(xMatch, yMatch);
 			                
@@ -764,9 +766,11 @@ public class DuplicationWeightCounter {
 				}
 				w1 = weight;
 				//System.out.println("Total "+cntt+" STBs");
-				 * 
-				 *
-				 */
+				 
+		        
+		        
+		        
+		        /*
 		        
 		        // looping over the gene trees
 		        for (int t = 0; t < trees.size(); t++) {
@@ -777,9 +781,16 @@ public class DuplicationWeightCounter {
 		            // Perform post-order traversal
 		            for (TNode node : tr.postTraverse()) {
 		                if (node.isLeaf()) {
-		                    int nodeID = node.getID();
-		                    int xMatch = X.get(nodeID) ? 1 : 0;
-		                    int yMatch = Y.get(nodeID) ? 1 : 0;
+//		                    int nodeID = node.getID();
+//		                    int xMatch = X.get(nodeID) ? 1 : 0;
+//		                    int yMatch = Y.get(nodeID) ? 1 : 0;
+		                    
+		                    
+		                    String nodeName = node.getName();
+		                    int xMatch = xTaxaSet.contains(nodeName) ? 1 : 0;
+			                int yMatch = yTaxaSet.contains(nodeName) ? 1 : 0;
+		                    
+		                    
 		                    // Create an array to hold the match counts for this leaf node
 		                    int[] counts = new int[2];
 		                    counts[0] = xMatch;  // x count
@@ -816,6 +827,9 @@ public class DuplicationWeightCounter {
 		            }
 		        }
 		        w1 = weight;
+		        
+		        *
+		        */
 
 			}
 			else {   
