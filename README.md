@@ -40,6 +40,12 @@ There are two ways,
   ![Running Stelar](images/6-running-stelar.png)
   <br><br>
 
+## Understanding the Codebase
+
+- The main function is at `MGDInference_DP.java`
+- The core logics of STELAR are under the file `CalculateWeightTask.java`
+
+-->
 
 ## Availability
 
