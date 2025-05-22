@@ -29,7 +29,7 @@ import phylonet.coalescent.MGDInference_DP.TaxonNameMap;
 
 public class DuplicationWeightCounter {
 
-	HashMap<STBipartition, Integer> weights;
+	HashMap<STBipartition, Double> weights;
 	String[] gtTaxa;
 	String[] stTaxa;
 
@@ -295,7 +295,7 @@ public class DuplicationWeightCounter {
 
 		System.err.println("Number of Clusters: " + s);
 
-		weights = new HashMap<STBipartition, Integer>(
+		weights = new HashMap<STBipartition, Double>(
 				geneTreeSTBCount.size() * 2);
 		// System.err.println("sigma n is "+sigmaN);
 
@@ -506,7 +506,7 @@ public class DuplicationWeightCounter {
 		}
 	}
 
-	public Integer getCalculatedBiPartitionDPWeight(STBipartition bi) {
+	public Double getCalculatedBiPartitionDPWeight(STBipartition bi) {
 		if (!weights.containsKey(bi)) {
 			// weights.put(bi,calculateMissingWeight(bi));
 			return null;
@@ -640,7 +640,7 @@ public class DuplicationWeightCounter {
 	    }
 		
 		// Cache to store computed values for (X, Y)
-	    private static final Map<BitSetPair, Integer> weightCache = new ConcurrentHashMap<>();
+	    private static final Map<BitSetPair, Double> weightCache = new ConcurrentHashMap<>();
 		
 
 		public CalculateWeightTask(STBipartition stb,
@@ -650,7 +650,7 @@ public class DuplicationWeightCounter {
 			this.trees = trees;
 		}
 		
-		int calculateMissingWeight() {
+		Double calculateMissingWeight() {
 			//System.err.print("Calculating weight for: " + biggerSTB);
 //			int weight = 0;
 			
@@ -677,9 +677,9 @@ public class DuplicationWeightCounter {
 	        
 		}
 
-		int computeWeight() {
+		Double computeWeight() {
 			//System.err.print("Calculating weight for: " + biggerSTB);
-			int weight = 0;
+			Double weight = 0.0;
 			
 			BitSet X =  stb.cluster1.getBitSet() ;
 			BitSet Y =  stb.cluster2.getBitSet() ;
@@ -697,11 +697,11 @@ public class DuplicationWeightCounter {
 			
 			
 			
-			int w1 = 0;
-			int w2 = 0;
+			Double w1 = 0.0;
+			Double w2 = 0.0;
 			
 			// isNew variable controls whether the improved or the previous algorithm is being run
-			boolean isNew = false;
+			boolean isNew = true;
 //			isNew = true;
 			
 			// O(nk) implementation instead of O(n^2k)
@@ -906,7 +906,7 @@ public class DuplicationWeightCounter {
 				// so, it calculates for each of them separately, and multiplies by count of appearance of that STB, then adds to the total
 				// since, practically there are many overlaps of STBs, this improves the performance a lot against the theoretical bound of O(n^2k)
 				
-				weight = 0;
+				weight = 0.0;
 				
 				int cntt = 0;
 				for (STBipartition smallerSTB : clusters.getContainedGeneTreeSTBs()) {
@@ -966,7 +966,7 @@ public class DuplicationWeightCounter {
 			return weight;
 		}
 
-		protected Integer compute() {
+		protected Double compute() {
 			return calculateMissingWeight();
 		}
 

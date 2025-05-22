@@ -160,7 +160,7 @@ public class ComputeMinCostTask {
 					}
 					// MP_VERSION: w = weigthWork.join();
 
-					Integer Wdom = counter.getCalculatedBiPartitionDPWeight(bi);
+					Double Wdom = counter.getCalculatedBiPartitionDPWeight(bi);
 
 					if (Wdom == null) {
 						weigthWork = counter.new CalculateWeightTask(bi,
