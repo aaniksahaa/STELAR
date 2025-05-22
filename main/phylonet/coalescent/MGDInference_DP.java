@@ -858,6 +858,8 @@ public class MGDInference_DP {
 			}
 			gtTaxa = stTaxa;
 		}
+		
+		System.out.println("\n\nUnrooted hopefully supported...\n\n");
 
 		System.err.println("Number of taxa: " + stTaxa.length);
 		System.err.println("Taxa: " + Arrays.toString(stTaxa));

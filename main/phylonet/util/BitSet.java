@@ -559,6 +559,21 @@ public class BitSet
         b.append('}');
         return b.toString();
     }
+    
+    
+    public String getBinaryString(int n) {
+        checkInvariants();
+        // Determine the length up to the last set bit or at least 64 bits if wordsInUse is small
+        int lastBit = wordsInUse <= 128 ? wordsInUse * 64 : cardinality();
+        int length = Math.max(lastBit, nextSetBit(0) + 1); // Ensure we cover the highest set bit
+        StringBuilder b = new StringBuilder(length);
+        
+        for (int i = 0; i < n; i++) {
+            b.append(get(i) ? '1' : '0');
+        }
+        
+        return b.toString();
+    }
 
     private static final int ADDRESS_BITS_PER_WORD = 6;
     private static final int BITS_PER_WORD = 64;
