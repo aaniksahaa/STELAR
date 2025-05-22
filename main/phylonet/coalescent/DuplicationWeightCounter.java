@@ -583,19 +583,60 @@ public class DuplicationWeightCounter {
 	class CalculateWeightTask {
 		
 		// Inner class to store matching counts for X and Y taxa
-	    private static class MatchingCounts {
-	        int xCount;
-	        int yCount;
+//	    private static class MatchingCounts {
+//	        int xCount;
+//	        int yCount;
+//	        
+//	        MatchingCounts(int x, int y) {
+//	            this.xCount = x;
+//	            this.yCount = y;
+//	        }
+//	        
+//	        void add(MatchingCounts other) {
+//	            this.xCount += other.xCount;
+//	            this.yCount += other.yCount;
+//	        }
+//	    }
+	    
+	    private static class DPValues {
+	        double PX;
+	        double PY;
+	        double QX;
+	        double QY;
+	        double parentDistance;
 	        
-	        MatchingCounts(int x, int y) {
-	            this.xCount = x;
-	            this.yCount = y;
+	        DPValues(double PX, double PY, double QX, double QY, double parentDistance) {
+	            this.PX = PX;
+	            this.PY = PY;
+	            this.QX = QX;
+	            this.QY = QY;
+	            this.parentDistance = parentDistance;
 	        }
+	    }
+	    
+//	    DPValues getParentDPValues(DPValues L, DPValues R) {
+//	    	
+//	    }
+	    
+	    DPValues getParentDPValues(TNode parentNode, DPValues L, DPValues R) {
+	        // Compute the exponential decay factors
+	        double expWAB = Math.exp(-L.parentDistance); // e^(-w(A,B))
+	        double expWAC = Math.exp(-R.parentDistance); // e^(-w(A,C))
 	        
-	        void add(MatchingCounts other) {
-	            this.xCount += other.xCount;
-	            this.yCount += other.yCount;
-	        }
+	        // Compute PX(A) = e^(-w(A,B)) * PX(B) + e^(-w(A,C)) * PX(C)
+	        double PX_A = expWAB * L.PX + expWAC * R.PX;
+	        
+	        // Compute QX(A) = e^(-w(A,B)) * QX(B) + e^(-w(A,C)) * QX(C) + e^(-w(A,B)) * PX(B) * e^(-w(A,C)) * PX(C)
+	        double QX_A = expWAB * L.QX + expWAC * R.QX + (expWAB * L.PX) * (expWAC * R.PX);
+	        
+	        // Compute PY(A) = e^(-w(A,B)) * PY(B) + e^(-w(A,C)) * PY(C)
+	        double PY_A = expWAB * L.PY + expWAC * R.PY;
+	        
+	        // Compute QY(A) = e^(-w(A,B)) * QY(B) + e^(-w(A,C)) * QY(C) + e^(-w(A,B)) * PY(B) * e^(-w(A,C)) * PY(C)
+	        double QY_A = expWAB * L.QY + expWAC * R.QY + (expWAB * L.PY) * (expWAC * R.PY);
+	        
+	        // Return new DPValues for the parent node A (parentDistance set to 0 since it's not specified)
+	        return new DPValues(PX_A, PY_A, QX_A, QY_A, parentNode.getParentDistance());
 	    }
 
 		/**
@@ -740,7 +781,7 @@ public class DuplicationWeightCounter {
 					// here what we do is, say we have a node A with children L and R
 	                // and let, for node N, N.x and N.y denote the match counts with X and Y respectively
 	                // MatchingCounts class serves this purpose of a pair of numbers
-					Stack<MatchingCounts> stack = new Stack<>();
+					Stack<DPValues> stack = new Stack<>();
 					
 					// we postTraverse, since it corresponds to DFS
 					for (TNode node : tr.postTraverse()) {
@@ -756,34 +797,60 @@ public class DuplicationWeightCounter {
 //							int xMatch = X.get(nodeID) ? 1 : 0;
 //			                int yMatch = Y.get(nodeID) ? 1 : 0;
 							
+							double PX, PY, QX, QY;
+							
 							
 							// Check if the leaf matches with X or Y taxa
+							if(xTaxaSet.contains(nodeName)) {
+								PX = 1.0;
+							} else {
+								PX = 0.0;
+							}
+							
+							if(yTaxaSet.contains(nodeName)) {
+								PY = 1.0;
+							} else {
+								PY = 0.0;
+							}
+							
+							QX = 0.0;
+							QY = 0.0;
+							
+							DPValues mc = new DPValues(PX, PY, QX, QY, node.getParentDistance());
 			                
-			                int xMatch = xTaxaSet.contains(nodeName) ? 1 : 0;
-			                int yMatch = yTaxaSet.contains(nodeName) ? 1 : 0;
-			                
-			                MatchingCounts mc = new MatchingCounts(xMatch, yMatch);
+//			                int xMatch = xTaxaSet.contains(nodeName) ? 1 : 0;
+//			                int yMatch = yTaxaSet.contains(nodeName) ? 1 : 0;
+//			                
+//			                MatchingCounts mc = new MatchingCounts(xMatch, yMatch);
 			                
 			                //nodeCounts.put(node, mc);
 			                
 			                stack.push(mc);
 						} else {
 							cntt++;
-							// For internal nodes, accumulate counts from children
-			                MatchingCounts currentCounts = new MatchingCounts(0, 0);
-			                
-//			                MatchingCounts L = null, R = null;
-//			                int i = 0;
-			                
-			                // here what we do is, say we have a node A with children L and R
-			                // and let, for node N, N.x and N.y denote the match counts with X and Y respectively
-			                // thus, we can say, A.x = L.x + R.x and A.y = L.y + R.y
-			                // since we are using a stack, we may just add the counts after popping the children off the stack
-			                MatchingCounts R = stack.pop();
-		                	MatchingCounts L = stack.pop();
-		                	currentCounts.add(L);
-		                	currentCounts.add(R);
-		                	stack.push(currentCounts);
+							// For internal nodes, accumulate DPValues from children
+			                DPValues R = stack.pop();
+		                	DPValues L = stack.pop();
+		                	
+		                	DPValues parentDPValues = getParentDPValues(node, L, R);
+		                	
+		                	stack.push(parentDPValues);
+		                	
+		                	double temp = 0.0;
+		                	
+		                	// Compute the exponential decay factors
+		                	double expWAB = Math.exp(-L.parentDistance); // e^(-w(A,B))
+		                	double expWAC = Math.exp(-R.parentDistance); // e^(-w(A,C))
+
+		                	// Compute the weighted sum for each case
+		                	double case1 = expWAB * L.QX * (expWAC * R.PY); // e^(-w(A,B)) Q_X(B) e^(-w(A,C)) P_Y(C)
+		                	double case2 = expWAB * L.PX * (expWAC * R.QY); // e^(-w(A,B)) P_X(B) e^(-w(A,C)) Q_Y(C)
+		                	double case3 = expWAC * R.QX * (expWAB * L.PY); // e^(-w(A,C)) Q_X(C) e^(-w(A,B)) P_Y(B)
+		                	double case4 = expWAC * R.PX * (expWAB * L.QY); // e^(-w(A,C)) P_X(C) e^(-w(A,B)) Q_Y(B)
+		                	
+		                	// Update parentDPValues.QX and QY with the sum of the four cases
+		                	weight += case1 + case2 + case3 + case4;
+		         
 		                	
 //			                for (TNode child : node.getChildren()) {
 //			                	
@@ -803,28 +870,28 @@ public class DuplicationWeightCounter {
 			                //nodeCounts.put(node, currentCounts);
 			                
 		                	// here, after we have the X and Y matches, we now add the triplet scores up the node
-			                int temp = 0, res;
-			                
-			                int c1 = L.xCount;
-			        		int c2 = R.yCount;
-	
-			        		res = c1*c2*(c1+c2-2);
-			        		res /=2;
-			        		
-			        		temp += res;
-			        		
-			        		c1 = L.yCount;
-			        		c2 = R.xCount;
-	
-			        		res = c1*c2*(c1+c2-2);
-			        		res /=2;
-			        		
-			        		temp += res;
-				
-							//System.out.println(temp);
-			        		
-			        		// finally we accumate it to the final total weight count means the total triplet score
-			        		weight += temp;
+//			                int temp = 0, res;
+//			                
+//			                int c1 = L.xCount;
+//			        		int c2 = R.yCount;
+//	
+//			        		res = c1*c2*(c1+c2-2);
+//			        		res /=2;
+//			        		
+//			        		temp += res;
+//			        		
+//			        		c1 = L.yCount;
+//			        		c2 = R.xCount;
+//	
+//			        		res = c1*c2*(c1+c2-2);
+//			        		res /=2;
+//			        		
+//			        		temp += res;
+//				
+//							//System.out.println(temp);
+//			        		
+//			        		// finally we accumate it to the final total weight count means the total triplet score
+//			        		weight += temp;
 			        		
 						}
 					}
