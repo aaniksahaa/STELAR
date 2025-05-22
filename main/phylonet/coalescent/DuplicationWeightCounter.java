@@ -583,20 +583,23 @@ public class DuplicationWeightCounter {
 	class CalculateWeightTask {
 		
 		// Inner class to store matching counts for X and Y taxa
-//	    private static class MatchingCounts {
-//	        int xCount;
-//	        int yCount;
-//	        
-//	        MatchingCounts(int x, int y) {
-//	            this.xCount = x;
-//	            this.yCount = y;
-//	        }
-//	        
-//	        void add(MatchingCounts other) {
-//	            this.xCount += other.xCount;
-//	            this.yCount += other.yCount;
-//	        }
-//	    }
+	    private static class DPValuesUnweighted {
+	        double PX;
+	        double PY;
+	        
+	        DPValuesUnweighted(double PX, double PY) {
+	        	this.PX = PX;
+	            this.PY = PY;
+	        }
+	    }
+	    
+	    DPValuesUnweighted getParentDPValues(DPValuesUnweighted L, DPValuesUnweighted R) {
+	        double PX_A = L.PX + R.PX;
+	        double PY_A = L.PY + R.PY;
+	        
+	        // Return new DPValues for the parent node A (parentDistance set to 0 since it's not specified)
+	        return new DPValuesUnweighted(PX_A, PY_A);
+	    }
 	    
 	    private static class DPValuesWeighted1 {
 	        double PX;
@@ -766,6 +769,10 @@ public class DuplicationWeightCounter {
 	        }
 	        
 		}
+		
+		Double getNc2(double n) {
+			return (n*(n-1)*1.0)/2.0;
+		}
 
 		Double computeWeight() {
 			//System.err.print("Calculating weight for: " + biggerSTB);
@@ -792,6 +799,7 @@ public class DuplicationWeightCounter {
 			
 			// isNew variable controls whether the improved or the previous algorithm is being run
 			// methods
+			// 0 = unweighted
 			// 1 = weighting with approach 1 - sum of three branch lengths
 			// 2 - weighting with approach 2 - sum of two branch lengths
 			
@@ -821,8 +829,63 @@ public class DuplicationWeightCounter {
 		        	}
 		        }
 		        
-		  
-				if(method == 1) {
+		        if(method == 0) {
+					for (int t = 0; t < trees.size(); t++) {
+						Tree tr = trees.get(t);
+						
+						Stack<DPValuesUnweighted> stack = new Stack<>();
+						
+						for (TNode node : tr.postTraverse()) {
+							// System.err.println("Node is:" + node);
+							if (node.isLeaf()) {
+								String nodeName = node.getName();
+								
+								double PX, PY;
+								
+								
+								// Check if the leaf matches with X or Y taxa
+								if(xTaxaSet.contains(nodeName)) {
+									PX = 1.0;
+								} else {
+									PX = 0.0;
+								}
+								
+								if(yTaxaSet.contains(nodeName)) {
+									PY = 1.0;
+								} else {
+									PY = 0.0;
+								}
+								
+								DPValuesUnweighted mc = new DPValuesUnweighted(PX, PY);
+				                
+				                stack.push(mc);
+							} else {
+								cntt++;
+								// For internal nodes, accumulate DPValues from children
+								DPValuesUnweighted R = stack.pop();
+								DPValuesUnweighted L = stack.pop();
+			                	
+								DPValuesUnweighted parentDPValues = getParentDPValues(L, R);
+			                	
+			                	stack.push(parentDPValues);
+			                	
+			                	double temp = 0.0;
+			                	
+	
+			                	// Compute the weighted sum for each case
+			                	double case1 = getNc2(L.PX) * R.PY;
+			                	double case2 = L.PX * getNc2(R.PY);
+			                	double case3 = getNc2(R.PX) * L.PY;
+			                	double case4 = R.PX * getNc2(L.PY);
+			                	
+			                	// Update parentDPValues.QX and QY with the sum of the four cases
+			                	weight += case1 + case2 + case3 + case4;
+				        		
+							}
+						}
+					}
+				}
+		        else if(method == 1) {
 					for (int t = 0; t < trees.size(); t++) {
 						Tree tr = trees.get(t);
 						
