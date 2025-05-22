@@ -598,14 +598,14 @@ public class DuplicationWeightCounter {
 //	        }
 //	    }
 	    
-	    private static class DPValues {
+	    private static class DPValuesWeighted1 {
 	        double PX;
 	        double PY;
 	        double QX;
 	        double QY;
 	        double parentDistance;
 	        
-	        DPValues(double PX, double PY, double QX, double QY, double parentDistance) {
+	        DPValuesWeighted1(double PX, double PY, double QX, double QY, double parentDistance) {
 	            this.PX = PX;
 	            this.PY = PY;
 	            this.QX = QX;
@@ -614,11 +614,9 @@ public class DuplicationWeightCounter {
 	        }
 	    }
 	    
-//	    DPValues getParentDPValues(DPValues L, DPValues R) {
-//	    	
-//	    }
 	    
-	    DPValues getParentDPValues(TNode parentNode, DPValues L, DPValues R) {
+	    
+	    DPValuesWeighted1 getParentDPValues(TNode parentNode, DPValuesWeighted1 L, DPValuesWeighted1 R) {
 	        // Compute the exponential decay factors
 	        double expWAB = Math.exp(-L.parentDistance); // e^(-w(A,B))
 	        double expWAC = Math.exp(-R.parentDistance); // e^(-w(A,C))
@@ -636,8 +634,59 @@ public class DuplicationWeightCounter {
 	        double QY_A = expWAB * L.QY + expWAC * R.QY + (expWAB * L.PY) * (expWAC * R.PY);
 	        
 	        // Return new DPValues for the parent node A (parentDistance set to 0 since it's not specified)
-	        return new DPValues(PX_A, PY_A, QX_A, QY_A, parentNode.getParentDistance());
+	        return new DPValuesWeighted1(PX_A, PY_A, QX_A, QY_A, parentNode.getParentDistance());
 	    }
+	    
+	    
+	    
+	    
+	    private static class DPValuesWeighted2 {
+	        double PX;
+	        double PY;
+	        double QX;
+	        double QY;
+	        double RX; // New field for R_X
+	        double RY; // New field for R_Y
+	        double parentDistance;
+	        
+	        DPValuesWeighted2(double PX, double PY, double QX, double QY, double RX, double RY, double parentDistance) {
+	            this.PX = PX;
+	            this.PY = PY;
+	            this.QX = QX;
+	            this.QY = QY;
+	            this.RX = RX;
+	            this.RY = RY;
+	            this.parentDistance = parentDistance;
+	        }
+	    }
+	    
+	    DPValuesWeighted2 getParentDPValues(TNode parentNode, DPValuesWeighted2 L, DPValuesWeighted2 R) {
+	        // Compute the exponential decay factors
+	        double expWAB = Math.exp(-L.parentDistance); // e^(-w(A,B))
+	        double expWAC = Math.exp(-R.parentDistance); // e^(-w(A,C))
+	        
+	        // Compute PX(A) = e^(-w(A,B)) * PX(B) + e^(-w(A,C)) * PX(C)
+	        double PX_A = expWAB * L.PX + expWAC * R.PX;
+	        
+	        // Compute QX(A) = QX(B) + QX(C) + e^(-w(A,B)) * PX(B) * e^(-w(A,C)) * PX(C)
+	        double QX_A = L.QX + R.QX + (expWAB * L.PX) * (expWAC * R.PX);
+	        
+	        // Compute RX(A) = RX(B) + RX(C)
+	        double RX_A = L.RX + R.RX;
+	        
+	        // Compute PY(A) = e^(-w(A,B)) * PY(B) + e^(-w(A,C)) * PY(C)
+	        double PY_A = expWAB * L.PY + expWAC * R.PY;
+	        
+	        // Compute QY(A) = QY(B) + QY(C) + e^(-w(A,B)) * PY(B) * e^(-w(A,C)) * PY(C)
+	        double QY_A = L.QY + R.QY + (expWAB * L.PY) * (expWAC * R.PY);
+	        
+	        // Compute RY(A) = RY(B) + RY(C)
+	        double RY_A = L.RY + R.RY;
+	        
+	        // Return new DPValues for the parent node A (parentDistance set to 0 since it's not specified)
+	        return new DPValuesWeighted2(PX_A, PY_A, QX_A, QY_A, RX_A, RY_A, parentNode.getParentDistance());
+	    }
+	    
 
 		/**
 		 * 
@@ -742,11 +791,17 @@ public class DuplicationWeightCounter {
 			Double w2 = 0.0;
 			
 			// isNew variable controls whether the improved or the previous algorithm is being run
-			boolean isNew = true;
+			// methods
+			// 1 = weighting with approach 1 - sum of three branch lengths
+			// 2 - weighting with approach 2 - sum of two branch lengths
+			
+			int method = 2;
+			
+			boolean isTraversalImplementation = (method == 1) || (method == 2);
 //			isNew = true;
 			
-			// O(nk) implementation instead of O(n^2k)
-			if(isNew) {
+			// O(nk) traversal implementation instead of O(n^2k)
+			if(isTraversalImplementation) {
 				int cntt = 0;
 				String[] Xtaxa = stb.cluster1.getTaxa();
 				String[] Ytaxa = stb.cluster2.getTaxa();
@@ -766,203 +821,134 @@ public class DuplicationWeightCounter {
 		        	}
 		        }
 		        
-		        
-		        // /* prev imp
-				
-		        // looping over the gene trees
-				for (int t = 0; t < trees.size(); t++) {
-					Tree tr = trees.get(t);
-					
-					// for each node, we need to keep two numbers
-					// matching leaves count (in its subtree) with X and Y
-					// Map<TNode, MatchingCounts> nodeCounts = new HashMap<>();
-					
-					// this stack actually does the DFS
-					// here what we do is, say we have a node A with children L and R
-	                // and let, for node N, N.x and N.y denote the match counts with X and Y respectively
-	                // MatchingCounts class serves this purpose of a pair of numbers
-					Stack<DPValues> stack = new Stack<>();
-					
-					// we postTraverse, since it corresponds to DFS
-					for (TNode node : tr.postTraverse()) {
-						// System.err.println("Node is:" + node);
-						if (node.isLeaf()) {
-							// from nodeName determine its matching
-							// since this is just one node, the count should be 0 or 1
-							String nodeName = node.getName();
-							
-							
-							// this id is not working, need to understand more
-//							int nodeID = node.getID() - 1;
-//							int xMatch = X.get(nodeID) ? 1 : 0;
-//			                int yMatch = Y.get(nodeID) ? 1 : 0;
-							
-							double PX, PY, QX, QY;
-							
-							
-							// Check if the leaf matches with X or Y taxa
-							if(xTaxaSet.contains(nodeName)) {
-								PX = 1.0;
+		  
+				if(method == 1) {
+					for (int t = 0; t < trees.size(); t++) {
+						Tree tr = trees.get(t);
+						
+						Stack<DPValuesWeighted1> stack = new Stack<>();
+						
+						for (TNode node : tr.postTraverse()) {
+							// System.err.println("Node is:" + node);
+							if (node.isLeaf()) {
+								String nodeName = node.getName();
+								
+								double PX, PY, QX, QY;
+								
+								
+								// Check if the leaf matches with X or Y taxa
+								if(xTaxaSet.contains(nodeName)) {
+									PX = 1.0;
+								} else {
+									PX = 0.0;
+								}
+								
+								if(yTaxaSet.contains(nodeName)) {
+									PY = 1.0;
+								} else {
+									PY = 0.0;
+								}
+								
+								QX = 0.0;
+								QY = 0.0;
+								
+								DPValuesWeighted1 mc = new DPValuesWeighted1(PX, PY, QX, QY, node.getParentDistance());
+				                
+				                stack.push(mc);
 							} else {
-								PX = 0.0;
+								cntt++;
+								// For internal nodes, accumulate DPValues from children
+				                DPValuesWeighted1 R = stack.pop();
+			                	DPValuesWeighted1 L = stack.pop();
+			                	
+			                	DPValuesWeighted1 parentDPValues = getParentDPValues(node, L, R);
+			                	
+			                	stack.push(parentDPValues);
+			                	
+			                	double temp = 0.0;
+			                	
+			                	// Compute the exponential decay factors
+			                	double expWAB = Math.exp(-L.parentDistance); // e^(-w(A,B))
+			                	double expWAC = Math.exp(-R.parentDistance); // e^(-w(A,C))
+	
+			                	// Compute the weighted sum for each case
+			                	double case1 = expWAB * L.QX * (expWAC * R.PY); // e^(-w(A,B)) Q_X(B) e^(-w(A,C)) P_Y(C)
+			                	double case2 = expWAB * L.PX * (expWAC * R.QY); // e^(-w(A,B)) P_X(B) e^(-w(A,C)) Q_Y(C)
+			                	double case3 = expWAC * R.QX * (expWAB * L.PY); // e^(-w(A,C)) Q_X(C) e^(-w(A,B)) P_Y(B)
+			                	double case4 = expWAC * R.PX * (expWAB * L.QY); // e^(-w(A,C)) P_X(C) e^(-w(A,B)) Q_Y(B)
+			                	
+			                	// Update parentDPValues.QX and QY with the sum of the four cases
+			                	weight += case1 + case2 + case3 + case4;
+				        		
 							}
-							
-							if(yTaxaSet.contains(nodeName)) {
-								PY = 1.0;
-							} else {
-								PY = 0.0;
-							}
-							
-							QX = 0.0;
-							QY = 0.0;
-							
-							DPValues mc = new DPValues(PX, PY, QX, QY, node.getParentDistance());
-			                
-//			                int xMatch = xTaxaSet.contains(nodeName) ? 1 : 0;
-//			                int yMatch = yTaxaSet.contains(nodeName) ? 1 : 0;
-//			                
-//			                MatchingCounts mc = new MatchingCounts(xMatch, yMatch);
-			                
-			                //nodeCounts.put(node, mc);
-			                
-			                stack.push(mc);
-						} else {
-							cntt++;
-							// For internal nodes, accumulate DPValues from children
-			                DPValues R = stack.pop();
-		                	DPValues L = stack.pop();
-		                	
-		                	DPValues parentDPValues = getParentDPValues(node, L, R);
-		                	
-		                	stack.push(parentDPValues);
-		                	
-		                	double temp = 0.0;
-		                	
-		                	// Compute the exponential decay factors
-		                	double expWAB = Math.exp(-L.parentDistance); // e^(-w(A,B))
-		                	double expWAC = Math.exp(-R.parentDistance); // e^(-w(A,C))
-
-		                	// Compute the weighted sum for each case
-		                	double case1 = expWAB * L.QX * (expWAC * R.PY); // e^(-w(A,B)) Q_X(B) e^(-w(A,C)) P_Y(C)
-		                	double case2 = expWAB * L.PX * (expWAC * R.QY); // e^(-w(A,B)) P_X(B) e^(-w(A,C)) Q_Y(C)
-		                	double case3 = expWAC * R.QX * (expWAB * L.PY); // e^(-w(A,C)) Q_X(C) e^(-w(A,B)) P_Y(B)
-		                	double case4 = expWAC * R.PX * (expWAB * L.QY); // e^(-w(A,C)) P_X(C) e^(-w(A,B)) Q_Y(B)
-		                	
-		                	// Update parentDPValues.QX and QY with the sum of the four cases
-		                	weight += case1 + case2 + case3 + case4;
-		         
-		                	
-//			                for (TNode child : node.getChildren()) {
-//			                	
-//			                    MatchingCounts childCounts = nodeCounts.get(child);
-//			                    if(i == 0) {
-//			                    	L = childCounts;
-//			                    } else {
-//			                    	R = childCounts;
-//			                    }
-//			                    if (childCounts != null) {
-//			                        currentCounts.add(childCounts);
-//			                    }
-//			                    i++;
-//			                }
-			                
-			       
-			                //nodeCounts.put(node, currentCounts);
-			                
-		                	// here, after we have the X and Y matches, we now add the triplet scores up the node
-//			                int temp = 0, res;
-//			                
-//			                int c1 = L.xCount;
-//			        		int c2 = R.yCount;
-//	
-//			        		res = c1*c2*(c1+c2-2);
-//			        		res /=2;
-//			        		
-//			        		temp += res;
-//			        		
-//			        		c1 = L.yCount;
-//			        		c2 = R.xCount;
-//	
-//			        		res = c1*c2*(c1+c2-2);
-//			        		res /=2;
-//			        		
-//			        		temp += res;
-//				
-//							//System.out.println(temp);
-//			        		
-//			        		// finally we accumate it to the final total weight count means the total triplet score
-//			        		weight += temp;
-			        		
 						}
 					}
 				}
+				else if(method == 2) {
+					for (int t = 0; t < trees.size(); t++) {
+						Tree tr = trees.get(t);
+						
+						Stack<DPValuesWeighted2> stack = new Stack<>();
+						
+						for (TNode node : tr.postTraverse()) {
+							// System.err.println("Node is:" + node);
+							if (node.isLeaf()) {
+								String nodeName = node.getName();
+								
+								double PX, PY, QX, QY, RX, RY;
+								
+								
+								// Check if the leaf matches with X or Y taxa
+								if(xTaxaSet.contains(nodeName)) {
+									PX = 1.0;
+									RX = 1.0;
+								} else {
+									PX = 0.0;
+									RX = 0.0;
+								}
+								
+								if(yTaxaSet.contains(nodeName)) {
+									PY = 1.0;
+									RY = 1.0;
+								} else {
+									PY = 0.0;
+									RY = 0.0;
+								}
+								
+								QX = 0.0;
+								QY = 0.0;
+								
+								DPValuesWeighted2 mc = new DPValuesWeighted2(PX, PY, QX, QY, RX, RY, node.getParentDistance());
+				                
+				                stack.push(mc);
+							} else {
+								cntt++;
+								// For internal nodes, accumulate DPValues from children
+				                DPValuesWeighted2 R = stack.pop();
+			                	DPValuesWeighted2 L = stack.pop();
+			                	
+			                	DPValuesWeighted2 parentDPValues = getParentDPValues(node, L, R);
+			                	
+			                	stack.push(parentDPValues);
+			                	
+			                	double temp = 0.0;
+			                	
+			                	// Compute the weighted sum for each case
+			                	double case1 = L.QX * R.RY; // Q_X(B) * R_Y(C)
+			                	double case2 = L.RX * R.QY; // R_X(B) * Q_Y(C)
+			                	double case3 = R.QX * L.RY; // Q_X(C) * R_Y(B)
+			                	double case4 = R.RX * L.QY; // R_X(C) * Q_Y(B)
+			                	
+			                	// Update parentDPValues.QX and QY with the sum of the four cases
+			                	weight += case1 + case2 + case3 + case4;
+				        		
+							}
+						}
+					}
+				}
+				
 				w1 = weight;
 				//System.out.println("Total "+cntt+" STBs");
-				 
-		        
-		        
-		        
-		        /* gpt improve imp
-		        
-		        // looping over the gene trees
-		        for (int t = 0; t < trees.size(); t++) {
-		            Tree tr = trees.get(t);
-		            // Use an ArrayDeque as a stack for better performance
-		            Deque<int[]> stack = new ArrayDeque<>();
-		            
-		            // Perform post-order traversal
-		            for (TNode node : tr.postTraverse()) {
-		                if (node.isLeaf()) {
-//		                    int nodeID = node.getID();
-//		                    int xMatch = X.get(nodeID) ? 1 : 0;
-//		                    int yMatch = Y.get(nodeID) ? 1 : 0;
-		                    
-		                    
-		                    String nodeName = node.getName();
-		                    int xMatch = xTaxaSet.contains(nodeName) ? 1 : 0;
-			                int yMatch = yTaxaSet.contains(nodeName) ? 1 : 0;
-		                    
-		                    
-		                    // Create an array to hold the match counts for this leaf node
-		                    int[] counts = new int[2];
-		                    counts[0] = xMatch;  // x count
-		                    counts[1] = yMatch;  // y count
-		                    stack.push(counts);
-		                } else {
-		                    // Pop counts for the two children
-		                    int[] right = stack.pop();
-		                    int[] left = stack.pop();
-		                    
-		                    // Aggregate counts for the current internal node
-		                    int[] current = new int[2];
-		                    current[0] = left[0] + right[0]; // Sum of x counts
-		                    current[1] = left[1] + right[1]; // Sum of y counts
-		                    stack.push(current);
-		                    
-		                    // Calculate the triplet score for the internal node
-		                    int temp = 0;
-		                    // Case 1: left.x * right.y triplets
-		                    int c1 = left[0];
-		                    int c2 = right[1];
-		                    int res = c1 * c2 * (c1 + c2 - 2) / 2;
-		                    temp += res;
-		                    
-		                    // Case 2: left.y * right.x triplets
-		                    c1 = left[1];
-		                    c2 = right[0];
-		                    res = c1 * c2 * (c1 + c2 - 2) / 2;
-		                    temp += res;
-		                    
-		                    // Accumulate the computed triplet score
-		                    weight += temp;
-		                }
-		            }
-		        }
-		        w1 = weight;
-		        
-		        *
-		        */
-
 			}
 			else {   
 				
