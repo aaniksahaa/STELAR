@@ -5,6 +5,7 @@
 .project*
 .settings*
 out/*
+datasets/*
 .class*
 .py*
 .idea*
