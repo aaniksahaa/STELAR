@@ -743,7 +743,7 @@ public class DuplicationWeightCounter {
 			this.trees = trees;
 		}
 		
-		Double calculateMissingWeight() {
+		Double calculateMissingWeight(String method) {
 			//System.err.print("Calculating weight for: " + biggerSTB);
 //			int weight = 0;
 			
@@ -762,10 +762,10 @@ public class DuplicationWeightCounter {
 	        if(isWeightCaching) {
 		        return weightCache.computeIfAbsent(key, k -> {
 		            // Perform computation if not cached
-		            return computeWeight();
+		            return computeWeight(method);
 		        });
 	        } else {
-	        	return computeWeight();
+	        	return computeWeight(method);
 	        }
 	        
 		}
@@ -774,7 +774,8 @@ public class DuplicationWeightCounter {
 			return (n*(n-1)*1.0)/2.0;
 		}
 
-		Double computeWeight() {
+		Double computeWeight(String method) {
+//			System.out.println("\n\nhello\n\nMethod = " + method);
 			//System.err.print("Calculating weight for: " + biggerSTB);
 			Double weight = 0.0;
 			
@@ -803,9 +804,7 @@ public class DuplicationWeightCounter {
 			// 1 = weighting with approach 1 - sum of three branch lengths
 			// 2 - weighting with approach 2 - sum of two branch lengths
 			
-			int method = 2;
-			
-			boolean isTraversalImplementation = (method == 1) || (method == 2);
+			boolean isTraversalImplementation = true;
 //			isNew = true;
 			
 			// O(nk) traversal implementation instead of O(n^2k)
@@ -829,7 +828,8 @@ public class DuplicationWeightCounter {
 		        	}
 		        }
 		        
-		        if(method == 0) {
+		        if(method.equals("base")) {
+//		        	System.out.println("\n\n\nhi at base...\n\n\n");
 					for (int t = 0; t < trees.size(); t++) {
 						Tree tr = trees.get(t);
 						
@@ -885,7 +885,8 @@ public class DuplicationWeightCounter {
 						}
 					}
 				}
-		        else if(method == 1) {
+		        else if(method.equals("weighted_3_terminal")) {
+//		        	System.out.println("\n\n\nat " + method + "...\n\n\n");
 					for (int t = 0; t < trees.size(); t++) {
 						Tree tr = trees.get(t);
 						
@@ -947,7 +948,7 @@ public class DuplicationWeightCounter {
 						}
 					}
 				}
-				else if(method == 2) {
+				else if(method.equals("weighted_2_terminal")) {
 					for (int t = 0; t < trees.size(); t++) {
 						Tree tr = trees.get(t);
 						
@@ -1082,8 +1083,8 @@ public class DuplicationWeightCounter {
 			return weight;
 		}
 
-		protected Double compute() {
-			return calculateMissingWeight();
+		protected Double compute(String method) {
+			return calculateMissingWeight(method);
 		}
 
 	}

@@ -30,6 +30,9 @@ import phylonet.util.BitSet;
 public class MGDInference_DP {
 	public static double _versinon =  0.0;
 	static boolean _print = true;
+	
+	String method = "base"; // Default method is "base"
+	
 	int optimizeDuploss = 1; //one means dup, 3 means duploss
 	boolean rooted = true;
 	boolean fast = false;
@@ -103,6 +106,8 @@ public class MGDInference_DP {
 			return;
 		}
 		
+		String method = "base"; // Default method
+		
 		int optimizeDuploss = 0;
 		boolean rooted = true;
 		boolean fast = false;
@@ -134,8 +139,31 @@ public class MGDInference_DP {
 		String inputFilename = null;
 		try {
 			List<String[]> options = getOptions(args);
+			
+//			for(String[] op: options) {
+//				for(String s: op) {
+//					System.out.print(s + ", ");
+//				}
+//				System.out.print("\n");
+//			}
+			
 			for (String[] option : options) {
-				if (option[0].equals("-i")) {
+				
+				if (option[0].equals("-m")) {
+	                if (option.length != 2) {
+	                    printUsage();
+	                    return;
+	                }
+	                method = option[1];
+	                // Optionally validate the method string
+	                if (!Arrays.asList("base", "unrooted", "weighted_2_terminal", "weighted_3_terminal").contains(method)) {
+	                    System.err.println("Invalid method: " + method);
+	                    printUsage();
+	                    return;
+	                }
+	            }
+				
+				else if (option[0].equals("-i")) {
 					if (option.length != 2) {
 						printUsage();
 						return;
@@ -465,6 +493,8 @@ public class MGDInference_DP {
 			inference = new MGDInference_DP(trees, extraTrees, null);
 		}
 		
+		inference.method = method;
+		
 		inference.optimizeDuploss = optimizeDuploss > 0 ? 3 : 1;
 		inference.DLbdWeigth = wh; 
 		inference.rooted = rooted;
@@ -768,6 +798,8 @@ public class MGDInference_DP {
 						   "\t    By default cs = cd = 1; so no extra clusters are added. Lower cs and cd values could result in better scores\n" +
 						   "\t    (especially when gene trees have low taxon occupancy) but can also increase the running time dramatically.");
 		
+		System.out.println("\t-m method: Specify the method for inference (e.g., base, unrooted, weighted-2-terminal, weighted-3-terminal). Default is 'base'.");
+		
 		//System.out.println("\t-f perform fast and less-accurate subtree-bipartition based search (Not implemented!).");
 		System.out.println();
 	}
@@ -899,6 +931,8 @@ public class MGDInference_DP {
 		}
 
 		sigmaNs = sigmaN ;
+		
+		System.out.println("\n\nMethod = " + method + "\n");
 
 		solutions = findTreesByDP(stTaxa, counter, trees, taxonNameMap,clusters);
 

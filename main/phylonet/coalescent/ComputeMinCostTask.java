@@ -166,7 +166,7 @@ public class ComputeMinCostTask {
 						weigthWork = counter.new CalculateWeightTask(bi,
 								containedVertecies, trees);
 						// MP_VERSION: smallWork.fork();
-						Wdom = weigthWork.compute();
+						Wdom = weigthWork.compute(inference.method);
 					}
 
 					Integer e = 0;
