@@ -17,7 +17,6 @@ fresh=1  # Set to 0 to skip existing output files, 1 to overwrite
 # Define methods to run
 methods=("base" "weighted_2_terminal" "weighted_3_terminal")
 
-# Define inner folder names for each taxa number
 # Define inner folder names for each taxa number as space-separated strings
 declare -A innerFolderNames
 innerFolderNames["11-taxon"]="estimated_Xgenes_strongILS/estimated_5genes_strongILS estimated_Xgenes_strongILS/estimated_15genes_strongILS estimated_Xgenes_strongILS/estimated_25genes_strongILS estimated_Xgenes_strongILS/estimated_50genes_strongILS estimated_Xgenes_strongILS/estimated_100genes_strongILS"
@@ -30,10 +29,6 @@ innerFolderNames["500-taxon"]="model.500.2000000.0.000001"
 innerFolderNames["biological"]="nuclear"
 innerFolderNames["mammalian"]="424genes"
 innerFolderNames["amniota"]="aa nt"
-
-
-
-
 
 # Define number of replicates for each folder
 declare -A replicates
@@ -67,63 +62,65 @@ for folder in "${folders[@]}"; do
     printf "%s,%s,%s,%s\n" "summary_new_method" "folder" "inner_folder" "average_rf" > "$rf_csv"
 
     # Get inner folders and number of replicates
-    # inner_folders=("${innerFolderNames[$folder]}")
     IFS=' ' read -r -a inner_folders <<< "${innerFolderNames[$folder]}"
-
     R=${replicates[$folder]}
 
     # Loop through each inner folder
     for inner_folder in "${inner_folders[@]}"; do
         echo "Processing inner folder: $inner_folder"
 
-        # Loop through each method
+        # Initialize arrays to store sums and counts for each method
+        declare -A sum_diffs sum_rfs count_diffs
         for method in "${methods[@]}"; do
-            echo "Processing method: $method"
+            sum_diffs[$method]=0
+            sum_rfs[$method]=0
+            count_diffs[$method]=0
+        done
 
-            # Initialize arrays to store sums and counts for averaging
-            sum_diffs=0
-            sum_rfs=0
-            count_diffs=0
+        # Loop through replicates
+        for ((j=1; j<=R; j++)); do
+            echo "Processing replicate R$j"
 
-            # Loop through replicates
-            for ((j=1; j<=R; j++)); do
-                echo "Processing replicate R$j for method $method"
+            # Define paths
+            gt_folder="$inner_folder/R$j"
+            input="./datasets/$folder/$gt_folder/all_gt.tre.rooted"
+            true_tree="./datasets/$folder/true_tree_trimmed"
 
-                # Define paths
-                gt_folder="$inner_folder/R$j"
-                input="./datasets/$folder/$gt_folder/all_gt.tre.rooted"
-                output="./datasets/$folder/$gt_folder/stelar_outputs/stelar_output_${method}.tre"
-                true_tree="./datasets/$folder/true_tree_trimmed"
-
-                # Special handling for certain folders
-                if [[ "$folder" == "100-taxon" || "$folder" == "200-taxon" || "$folder" == "500-taxon" ]]; then
-                    true_tree="./datasets/$folder/true-species-trees/R$j/sp-cleaned"
-                elif [[ "$folder" == "11-taxon-new" ]]; then
-                    true_tree="./datasets/$folder/higher-ILS/true-speciestrees/R$j.true.tre"
-                elif [[ "$folder" == "1000-taxon" ]]; then
-                    if [[ $j -lt 10 ]]; then
-                        gt_folder="$inner_folder/0$j"
-                        true_tree="./datasets/$folder/true-species-trees/0$j/s_tree.trees"
-                    else
-                        gt_folder="$inner_folder/$j"
-                        true_tree="./datasets/$folder/true-species-trees/$j/s_tree.trees"
-                    fi
-                    input="./datasets/$folder/$gt_folder/stelar_inputs/stelar_input.tre"
-                    output="./datasets/$folder/$gt_folder/stelar_outputs/stelar_output_${method}.tre"
+            # Special handling for certain folders
+            if [[ "$folder" == "100-taxon" || "$folder" == "200-taxon" || "$folder" == "500-taxon" ]]; then
+                true_tree="./datasets/$folder/true-species-trees/R$j/sp-cleaned"
+            elif [[ "$folder" == "11-taxon-new" ]]; then
+                true_tree="./datasets/$folder/higher-ILS/true-speciestrees/R$j.true.tre"
+            elif [[ "$folder" == "1000-taxon" ]]; then
+                if [[ $j -lt 10 ]]; then
+                    gt_folder="$inner_folder/0$j"
+                    true_tree="./datasets/$folder/true-species-trees/0$j/s_tree.trees"
+                else
+                    gt_folder="$inner_folder/$j"
+                    true_tree="./datasets/$folder/true-species-trees/$j/s_tree.trees"
                 fi
+                input="./datasets/$folder/$gt_folder/stelar_inputs/stelar_input.tre"
+            fi
 
-                # Create output directory
-                mkdir -p "./datasets/$folder/$gt_folder/stelar_outputs"
+            # Create output directory
+            mkdir -p "./datasets/$folder/$gt_folder/stelar_outputs"
+
+            # Ensure input file exists
+            if [[ ! -f "$input" ]]; then
+                echo "Error: Input file does not exist: $input"
+                continue
+            fi
+
+            # Loop through each method (innermost loop)
+            for method in "${methods[@]}"; do
+                echo "Processing method: $method for replicate R$j"
+
+                # Define output path
+                output="./datasets/$folder/$gt_folder/stelar_outputs/stelar_output_${method}.tre"
 
                 # Skip if output exists and fresh is 0
                 if [[ -f "$output" && $fresh -eq 0 ]]; then
                     echo "Output exists, skipping: $output"
-                    continue
-                fi
-
-                # Ensure input file exists
-                if [[ ! -f "$input" ]]; then
-                    echo "Error: Input file does not exist: $input"
                     continue
                 fi
 
@@ -141,19 +138,21 @@ for folder in "${folders[@]}"; do
                     RFdistance=$(echo "$tuple" | cut -d',' -f"$index_to_extract" | tr -d '()')
                     echo "RF Distance for method $method: $RFdistance"
 
-                    # Update sums and count
-                    sum_diffs=$(echo "$sum_diffs + $DIFF" | bc)
-                    sum_rfs=$(echo "$sum_rfs + $RFdistance" | bc)
-                    ((count_diffs++))
+                    # Update sums and count for this method
+                    sum_diffs[$method]=$(echo "${sum_diffs[$method]} + $DIFF" | bc)
+                    sum_rfs[$method]=$(echo "${sum_rfs[$method]} + $RFdistance" | bc)
+                    ((count_diffs[$method]++))
                 else
                     echo "Error: Output or true tree file missing for RF calculation"
                 fi
             done
+        done
 
-            # Calculate and store averages
-            if [[ $count_diffs -gt 0 ]]; then
-                average_diff=$(echo "$sum_diffs / $count_diffs" | bc -l)
-                average_rf=$(echo "$sum_rfs / $count_diffs" | bc -l)
+        # Calculate and store averages for each method
+        for method in "${methods[@]}"; do
+            if [[ ${count_diffs[$method]} -gt 0 ]]; then
+                average_diff=$(echo "${sum_diffs[$method]} / ${count_diffs[$method]}" | bc -l)
+                average_rf=$(echo "${sum_rfs[$method]} / ${count_diffs[$method]}" | bc -l)
                 printf "Average DIFF for %s (%s): %.6f\n" "$inner_folder" "$method" "$average_diff"
                 printf "Average RF for %s (%s): %.6f\n" "$inner_folder" "$method" "$average_rf"
 
