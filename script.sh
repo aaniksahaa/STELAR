@@ -15,7 +15,7 @@ folders=("37-taxon")  # Adjust as needed: 11-taxon, 37-taxon, 48-taxon, etc.
 fresh=1  # Set to 0 to skip existing output files, 1 to overwrite
 
 # Define methods to run
-methods=("base" "weighted_2_terminal" "weighted_3_terminal")
+methods=("base" "unrooted" "weighted_2_terminal" "weighted_3_terminal")
 
 # Define inner folder names for each taxa number as space-separated strings
 declare -A innerFolderNames

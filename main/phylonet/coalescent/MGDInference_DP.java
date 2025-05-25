@@ -1044,7 +1044,7 @@ public class MGDInference_DP {
 		}
 */
 		Vertex all = (Vertex) clusters.getTopVertex();
-		System.err.println("Sigma N: " + sigmaNs);
+		System.err.println("Sigma N: " + sigmaNs); 
 
 		System.err.println("Size of largest cluster: " +all.getCluster().getClusterSize());
 

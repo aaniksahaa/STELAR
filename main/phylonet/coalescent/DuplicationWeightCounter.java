@@ -805,6 +805,9 @@ public class DuplicationWeightCounter {
 			// 2 - weighting with approach 2 - sum of two branch lengths
 			
 			boolean isTraversalImplementation = true;
+			if(method.equals("base") || method.equals("unrooted")) { 
+				isTraversalImplementation = false;
+			}
 //			isNew = true;
 			
 			// O(nk) traversal implementation instead of O(n^2k)
@@ -1025,14 +1028,59 @@ public class DuplicationWeightCounter {
 				
 				weight = 0.0;
 				
-				int cntt = 0;
 				for (STBipartition smallerSTB : clusters.getContainedGeneTreeSTBs()) {
-					
-						int temp = 0;
-						// possible place of implementation.
+					int temp = 0;
+					// possible place of implementation.
 					//	System.out.println("Loop "+ smallerSTB.toString() +"count =  "+ geneTreeSTBCount.get(smallerSTB)); 
-						BitSet A = smallerSTB.cluster1.getBitSet();
-						BitSet B = smallerSTB.cluster2.getBitSet();
+					BitSet A = smallerSTB.cluster1.getBitSet();
+					BitSet B = smallerSTB.cluster2.getBitSet();
+					
+					
+					if(method.equals("unrooted")) {
+						
+//						System.out.println("\n\nI am here at unrooted...\n\n");
+						
+						int n = smallerSTB.cluster1.getTaxa().length;
+						
+						
+						// unrooted
+						int total = or(A,B).cardinality();
+						if(total == n) {
+							continue; // because now we are doing unrooted, so the topmost root will be ignored
+						}
+						
+						
+						
+						BitSet C = flip(or(A,B), 0, n);
+						
+						
+						BitSet AX = and(A,X);
+						BitSet AY = and(A,Y);
+						
+						BitSet BX = and(B,X);
+						BitSet BY = and(B,Y);
+						
+						BitSet CX = and(C,X);
+						BitSet CY = and(C,Y);
+						
+						int a = A.cardinality();
+						int b = B.cardinality();
+						int c = C.cardinality();
+						
+						
+						int s1 = AX.cardinality()*BY.cardinality()*CY.cardinality() 
+								+ AY.cardinality()*BX.cardinality()*CX.cardinality();
+						int s2 = BX.cardinality()*CY.cardinality()*AY.cardinality() 
+								+ BY.cardinality()*CX.cardinality()*AX.cardinality();
+						int s3 = CX.cardinality()*AY.cardinality()*BY.cardinality() 
+								+ CY.cardinality()*AX.cardinality()*BX.cardinality();
+						
+						temp = (2*a - 1)*s1 + (2*b - 1)*s2 + (2*c - 1)*s3;
+						
+					}
+					else {
+						
+//						System.out.println("\n\nI am here at base...\n\n");
 						
 						BitSet X1 = and(X,A);
 						BitSet Y1 = and(Y,B);
@@ -1041,16 +1089,16 @@ public class DuplicationWeightCounter {
 						BitSet X2 = and(X,B);
 						BitSet Y2 = and(Y,A);
 						temp += apply(X2, Y2);
-									
-						//System.out.println(geneTreeSTBCount.get(smallerSTB));
-						temp *= geneTreeSTBCount.get(smallerSTB);
-						weight += temp;
-						//System.out.println(smallerSTB.toString() + " :: "+ temp);
-						
-						cntt += geneTreeSTBCount.get(smallerSTB);
-				}
-				//System.out.println("Total "+cntt+" STBs");
+					
+					}
 				
+					//System.out.println(geneTreeSTBCount.get(smallerSTB));
+					temp *= geneTreeSTBCount.get(smallerSTB);
+					weight += temp;
+					//System.out.println(smallerSTB.toString() + " :: "+ temp);
+				}
+					
+				//System.out.println("Total "+cntt+" STBs");
 				w2 = weight;
 			}
 			
@@ -1102,6 +1150,18 @@ public class DuplicationWeightCounter {
 		BitSet _y = (BitSet) y.clone();
 		_x.and(_y);
 
+		return _x;
+	}
+	BitSet or(BitSet x, BitSet y) {
+		BitSet _x = (BitSet) x.clone();
+		BitSet _y = (BitSet) y.clone();
+		_x.or(_y);
+
+		return _x;
+	}
+	BitSet flip(BitSet x, int fromIndex, int toIndex) {
+		BitSet _x = (BitSet) x.clone();
+		_x.flip(fromIndex, toIndex);
 		return _x;
 	}
 
