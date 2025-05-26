@@ -896,6 +896,7 @@ public class DuplicationWeightCounter {
 						Stack<DPValuesWeighted1> stack = new Stack<>();
 						
 						for (TNode node : tr.postTraverse()) {
+							
 							// System.err.println("Node is:" + node);
 							if (node.isLeaf()) {
 								String nodeName = node.getName();
